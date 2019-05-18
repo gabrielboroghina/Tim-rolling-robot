@@ -3,8 +3,8 @@
 
 #include <avr/io.h>
 
-#define DEFAULT_BUFFER_SIZE        200
-#define DEFAULT_TIMEOUT            10000
+#define BUF_SIZE        200
+#define DEFAULT_TIMEOUT 1300
 
 /* Connection Mode */
 #define SINGLE_CONN    0
@@ -70,6 +70,6 @@ uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port);
 
 uint8_t ESP8266_Send(char *Data);
 
-uint16_t Read_Data(char *_buffer);
+uint16_t Read_Data(char *buffer);
 
 #endif // ESP8266_H

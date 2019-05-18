@@ -53,13 +53,12 @@ int main() {
     sei(); // enable global interrupts
 
     initDebug_USART1();
-    _delay_ms(3000);
 
     //initServoPWMs();
 
     initWiFi();
 
-    char buffer[200];
+    char buffer[BUF_SIZE];
     uint8_t connStatus;
 
     while (!ESP8266_Begin());
@@ -73,10 +72,11 @@ int main() {
     _delay_ms(2000);
 
     ESP8266_Start(0, DOMAIN, PORT);
-    printf(">>> TCP conn ready\n");
+    printf(">>> TCP conn established\n");
 
     _delay_ms(3000);
 
+    int8_t speed, dir;
     while (true) {
         connStatus = ESP8266_connected();
         if (connStatus == ESP8266_NOT_CONNECTED_TO_AP)
@@ -84,16 +84,21 @@ int main() {
         if (connStatus == ESP8266_TRANSMISSION_DISCONNECTED)
             ESP8266_Start(0, DOMAIN, PORT);
 
-        _delay_ms(1000);
-
-        printf("sending UPDATE request\n");
-
-        memset(buffer, 0, 200);
+        memset(buffer, 0, BUF_SIZE);
         sprintf(buffer,
                 "GET /get HTTP/1.1\r\nHost: tim-tim.7e14.starter-us-west-2.openshiftapps.com\r\nUser-Agent: esp\r\nAccept: */*\r\n\r\n");
         ESP8266_Send(buffer);
         Read_Data(buffer);
-        printf(">>> Response%s\n", buffer);
+
+        printf("\nRECV: %s\n", buffer);
+
+        char *beg = strchr(buffer, '*');
+        char *sec = strchr(beg, ';');
+
+        *sec = '\0';
+        speed = atoi(beg + 3);
+        dir = atoi(sec + 1);
+        printf("\n----------------\n%i %i\n------------------\n", speed, dir);
     }
 
     return 0;
