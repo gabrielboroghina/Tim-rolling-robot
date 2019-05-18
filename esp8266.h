@@ -3,7 +3,7 @@
 
 #include <avr/io.h>
 
-#define DEFAULT_BUFFER_SIZE        160
+#define DEFAULT_BUFFER_SIZE        200
 #define DEFAULT_TIMEOUT            10000
 
 /* Connection Mode */
@@ -20,7 +20,7 @@
 #define WIFI_MODE_STA_AP  3
 
 
-#define DOMAIN  "servl.gear.host"
+#define DOMAIN  "tim-tim.7e14.starter-us-west-2.openshiftapps.com"
 #define PORT    "80"
 
 #define SSID       "GB"

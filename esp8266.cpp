@@ -10,7 +10,7 @@
 #include "usart.h"
 
 int8_t Response_Status;
-volatile int16_t Counter = 0, pointer = 0;
+volatile int16_t responseLen = 0, pointer = 0;
 uint32_t TimeOut = 0;
 char RESPONSE_BUFFER[DEFAULT_BUFFER_SIZE];
 
@@ -52,7 +52,7 @@ void Read_Response(char *_Expected_Response) {
 
 void ESP8266_Clear() {
     memset(RESPONSE_BUFFER, 0, DEFAULT_BUFFER_SIZE);
-    Counter = 0;
+    responseLen = 0;
     pointer = 0;
 }
 
@@ -196,24 +196,25 @@ uint8_t ESP8266_connected() {
 
 uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port) {
     bool _startResponse;
-    char _atCommand[60];
-    memset(_atCommand, 0, 60);
-    _atCommand[59] = 0;
+    char _atCommand[100];
+    memset(_atCommand, 0, 100);
+    _atCommand[99] = 0;
 
+    _delay_ms(4000);
     if (SendATandExpectResponse("AT+CIPMUX?", "CIPMUX:0"))
         sprintf(_atCommand, "AT+CIPSTART=\"TCP\",\"%s\",%s", Domain, Port);
     else
         sprintf(_atCommand, "AT+CIPSTART=\"TCP\",\"%s\",%s", Domain, Port);
 //        sprintf(_atCommand, "AT+CIPSTART=\"%d\",\"TCP\",\"%s\",%s", _ConnectionNumber, Domain,
 //                Port);
-    printf("///sending CONN\n");
+
     _startResponse = SendATandExpectResponse(_atCommand, "CONNECT\r\n");
-    printf("<<< ready CONN %i\n", Response_Status);
     if (!_startResponse) {
         if (Response_Status == ESP8266_RESPONSE_TIMEOUT)
             return ESP8266_RESPONSE_TIMEOUT;
         return ESP8266_RESPONSE_ERROR;
     }
+    printf("returning\n");
     return ESP8266_RESPONSE_FINISHED;
 }
 
@@ -231,25 +232,24 @@ uint8_t ESP8266_Send(char *Data) {
     return ESP8266_RESPONSE_FINISHED;
 }
 
-//int16_t ESP8266_DataAvailable() {
-//    return (Counter - pointer);
-//}
-//
-//uint8_t ESP8266_DataRead() {
-//    if (pointer < Counter)
-//        return RESPONSE_BUFFER[pointer++];
-//    else {
-//        ESP8266_Clear();
-//        return 0;
-//    }
-//}
+int16_t ESP8266_DataAvailable() {
+    return (responseLen - pointer);
+}
+
+uint8_t ESP8266_DataRead() {
+    if (pointer < responseLen)
+        return RESPONSE_BUFFER[pointer++];
+    else {
+        ESP8266_Clear();
+        return 0;
+    }
+}
 
 uint16_t Read_Data(char *_buffer) {
     uint16_t len = 0;
     _delay_ms(100);
-
-    memcpy(_buffer, RESPONSE_BUFFER, Counter);
-    _buffer[Counter] = '\0';
+    while (ESP8266_DataAvailable() > 0)
+        _buffer[len++] = ESP8266_DataRead();
     return len;
 }
 
@@ -257,13 +257,13 @@ uint16_t Read_Data(char *_buffer) {
 ISR (USART0_RX_vect) {
     uint8_t oldsrg = SREG;
     cli();
-    RESPONSE_BUFFER[Counter] = UDR0;
+    RESPONSE_BUFFER[responseLen] = UDR0;
 
     printf("%c", UDR0); // print all ESP8266 responses to debug serial
 
-    Counter++;
-    if (Counter == DEFAULT_BUFFER_SIZE) {
-        Counter = 0;
+    responseLen++;
+    if (responseLen == DEFAULT_BUFFER_SIZE) {
+        responseLen = 0;
         pointer = 0;
     }
     SREG = oldsrg;

@@ -72,8 +72,7 @@ int main() {
 
     _delay_ms(2000);
 
-    if (ESP8266_Start(0, DOMAIN, PORT) != ESP8266_RESPONSE_FINISHED)
-        printf("CONN not successful\n");
+    ESP8266_Start(0, DOMAIN, PORT);
     printf(">>> TCP conn ready\n");
 
     _delay_ms(3000);
@@ -85,13 +84,13 @@ int main() {
         if (connStatus == ESP8266_TRANSMISSION_DISCONNECTED)
             ESP8266_Start(0, DOMAIN, PORT);
 
-        _delay_ms(3000);
+        _delay_ms(1000);
 
         printf("sending UPDATE request\n");
 
         memset(buffer, 0, 200);
         sprintf(buffer,
-                "GET / HTTP/1.1\r\nHost: servl.gear.host\r\nUser-Agent: esp\r\nAccept: */*\r\n\r\n");
+                "GET /get HTTP/1.1\r\nHost: tim-tim.7e14.starter-us-west-2.openshiftapps.com\r\nUser-Agent: esp\r\nAccept: */*\r\n\r\n");
         ESP8266_Send(buffer);
         Read_Data(buffer);
         printf(">>> Response%s\n", buffer);
