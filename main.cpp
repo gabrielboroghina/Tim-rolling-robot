@@ -53,12 +53,13 @@ int main() {
     sei(); // enable global interrupts
 
     initDebug_USART1();
+    _delay_ms(3000);
 
-    initServoPWMs();
+    //initServoPWMs();
 
     initWiFi();
 
-    char buffer[150];
+    char buffer[200];
     uint8_t connStatus;
 
     while (!ESP8266_Begin());
@@ -71,9 +72,11 @@ int main() {
 
     _delay_ms(2000);
 
-    ESP8266_Start(0, DOMAIN, PORT);
+    if (ESP8266_Start(0, DOMAIN, PORT) != ESP8266_RESPONSE_FINISHED)
+        printf("CONN not successful\n");
+    printf(">>> TCP conn ready\n");
 
-    _delay_ms(1000);
+    _delay_ms(3000);
 
     while (true) {
         connStatus = ESP8266_connected();
@@ -82,16 +85,16 @@ int main() {
         if (connStatus == ESP8266_TRANSMISSION_DISCONNECTED)
             ESP8266_Start(0, DOMAIN, PORT);
 
-        memset(buffer, 0, 150);
+        _delay_ms(3000);
+
+        printf("sending UPDATE request\n");
+
+        memset(buffer, 0, 200);
         sprintf(buffer,
-                "GET /get HTTP/1.1\r\nHost: tim-tim.7e14.starter-us-west-2.openshiftapps.com\r\nUser-Agent: curl/7.54.0\r\nAccept: */*\r\n\r\n");
+                "GET / HTTP/1.1\r\nHost: servl.gear.host\r\nUser-Agent: esp\r\nAccept: */*\r\n\r\n");
         ESP8266_Send(buffer);
         Read_Data(buffer);
-
-        printf("%s\n", buffer);
-
-        _delay_ms(1000);
-        printf("sent GET\n");
+        printf(">>> Response%s\n", buffer);
     }
 
     return 0;

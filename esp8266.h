@@ -19,7 +19,7 @@
 #define WIFI_MODE_ACCESSPOINT  2
 #define WIFI_MODE_STA_AP  3
 
-/* Define Required fields shown below */
+
 #define DOMAIN  "servl.gear.host"
 #define PORT    "80"
 

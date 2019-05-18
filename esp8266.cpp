@@ -163,7 +163,6 @@ uint8_t ESP8266_JoinAccessPoint(char *_SSID, char *_PASSWORD) {
     sprintf(_atCommand, "AT+CWJAP=\"%s\",\"%s\"", _SSID, _PASSWORD);
     _atCommand[59] = 0;
     if (SendATandExpectResponse(_atCommand, "\r\nWIFI CONNECTED\r\n")) {
-        printf("WiFi connected\r\n");
         return ESP8266_WIFI_CONNECTED;
     } else {
         printf("WiFi connecting error\r\n");
@@ -204,10 +203,12 @@ uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port) {
     if (SendATandExpectResponse("AT+CIPMUX?", "CIPMUX:0"))
         sprintf(_atCommand, "AT+CIPSTART=\"TCP\",\"%s\",%s", Domain, Port);
     else
-        sprintf(_atCommand, "AT+CIPSTART=\"%d\",\"TCP\",\"%s\",%s", _ConnectionNumber, Domain,
-                Port);
-
+        sprintf(_atCommand, "AT+CIPSTART=\"TCP\",\"%s\",%s", Domain, Port);
+//        sprintf(_atCommand, "AT+CIPSTART=\"%d\",\"TCP\",\"%s\",%s", _ConnectionNumber, Domain,
+//                Port);
+    printf("///sending CONN\n");
     _startResponse = SendATandExpectResponse(_atCommand, "CONNECT\r\n");
+    printf("<<< ready CONN %i\n", Response_Status);
     if (!_startResponse) {
         if (Response_Status == ESP8266_RESPONSE_TIMEOUT)
             return ESP8266_RESPONSE_TIMEOUT;
@@ -230,24 +231,25 @@ uint8_t ESP8266_Send(char *Data) {
     return ESP8266_RESPONSE_FINISHED;
 }
 
-int16_t ESP8266_DataAvailable() {
-    return (Counter - pointer);
-}
-
-uint8_t ESP8266_DataRead() {
-    if (pointer < Counter)
-        return RESPONSE_BUFFER[pointer++];
-    else {
-        ESP8266_Clear();
-        return 0;
-    }
-}
+//int16_t ESP8266_DataAvailable() {
+//    return (Counter - pointer);
+//}
+//
+//uint8_t ESP8266_DataRead() {
+//    if (pointer < Counter)
+//        return RESPONSE_BUFFER[pointer++];
+//    else {
+//        ESP8266_Clear();
+//        return 0;
+//    }
+//}
 
 uint16_t Read_Data(char *_buffer) {
     uint16_t len = 0;
     _delay_ms(100);
-    while (ESP8266_DataAvailable() > 0)
-        _buffer[len++] = ESP8266_DataRead();
+
+    memcpy(_buffer, RESPONSE_BUFFER, Counter);
+    _buffer[Counter] = '\0';
     return len;
 }
 
