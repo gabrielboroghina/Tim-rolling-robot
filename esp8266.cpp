@@ -13,7 +13,7 @@ int8_t responseStatus;
 volatile int16_t responseLen = 0, pointer = 0;
 char responseBuf[BUF_SIZE];
 
-void ESP8266_ReadResponse(char *expectedResponse) {
+void ESP8266_ReadResponse(const char *expectedResponse) {
     uint8_t expectedLen = strlen(expectedResponse);
     uint32_t timeCount = 0, responseLength;
     char RECEIVED_CRLF_BUF[expectedLen];
@@ -69,7 +69,7 @@ void GetResponseBody(char *Response, uint16_t ResponseLength) {
 }
 
 /** @return true for success, false otherwise */
-bool WaitForExpectedResponse(char *expectedResponse) {
+bool WaitForExpectedResponse(const char *expectedResponse) {
     ESP8266_ReadResponse(expectedResponse);
 
     return responseStatus != ESP8266_RESPONSE_TIMEOUT;
@@ -83,7 +83,7 @@ void sendAT(char *ATCmd) {
     USART0_print("\r\n");
 }
 
-bool SendATandExpectResponse(char *ATCommand, char *expectedResponse) {
+bool SendATandExpectResponse(const char *ATCommand, const char *expectedResponse) {
     ESP8266_Clear();
 
     /* send AT command to ESP8266 */

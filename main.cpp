@@ -10,6 +10,12 @@
 #include "usart.h"
 #include "esp8266.h"
 
+const char *UPDATE_REQUEST =
+        "GET /get HTTP/1.1\r\n"
+        "Host: tim-tim.7e14.starter-us-west-2.openshiftapps.com\r\n"
+        "User-Agent: esp\r\n"
+        "Accept: */*\r\n\r\n";
+
 void initDebug_USART1() {
     USART1_init();
 
@@ -69,8 +75,7 @@ int main() {
 
     // connect to driving server
     ESP8266_Start(0, DOMAIN, PORT);
-//    printf(">>> TCP conn established\n");
-
+    // printf(">>> TCP conn established\n");
     _delay_ms(3000);
 
     char buffer[BUF_SIZE];
@@ -86,9 +91,7 @@ int main() {
             ESP8266_Start(0, DOMAIN, PORT);
 
         memset(buffer, 0, BUF_SIZE);
-        sprintf(buffer,
-                "GET /get HTTP/1.1\r\nHost: tim-tim.7e14.starter-us-west-2.openshiftapps.com\r\nUser-Agent: esp\r\nAccept: */*\r\n\r\n");
-        ESP8266_Send(buffer);
+        ESP8266_Send(UPDATE_REQUEST);
         ESP8266_Read(buffer);
 
         // extract parameters from server response
@@ -98,7 +101,7 @@ int main() {
         *sec = '\0';
         speed = atoi(beg + 3);
         dir = atoi(sec + 1);
-        printf("\n----------------\n%i %i\n----------------\n", speed, dir);
+        printf("%i %i\n", speed, dir);
     }
 
     return 0;

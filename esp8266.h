@@ -61,13 +61,13 @@ bool ESP8266_ApplicationMode(uint8_t mode);
 
 bool ESP8266_ConnectionMode(uint8_t mode);
 
-uint8_t ESP8266_JoinAccessPoint(char *_SSID, char *_PASSWORD);
+uint8_t ESP8266_JoinAccessPoint(const char *_SSID, const char *_PASSWORD);
 
 uint8_t ESP8266_Connected();
 
-uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port);
+uint8_t ESP8266_Start(uint8_t connectionNumber, const char *domain, const char *port);
 
-uint8_t ESP8266_Send(char *Data);
+uint8_t ESP8266_Send(const char *data);
 
 uint16_t ESP8266_Read(char *buffer);
 
