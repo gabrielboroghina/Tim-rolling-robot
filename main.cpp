@@ -88,9 +88,9 @@ int main() {
         sprintf(buffer,
                 "GET /get HTTP/1.1\r\nHost: tim-tim.7e14.starter-us-west-2.openshiftapps.com\r\nUser-Agent: esp\r\nAccept: */*\r\n\r\n");
         ESP8266_Send(buffer);
-        Read_Data(buffer);
+        ESP8266_Read(buffer);
 
-        printf("\nRECV: %s\n", buffer);
+        //printf("\nRECV: \n%s\n", buffer);
 
         char *beg = strchr(buffer, '*');
         char *sec = strchr(beg, ';');
@@ -98,7 +98,7 @@ int main() {
         *sec = '\0';
         speed = atoi(beg + 3);
         dir = atoi(sec + 1);
-        printf("\n----------------\n%i %i\n------------------\n", speed, dir);
+        printf("\n----------------\n%i %i\n----------------\n", speed, dir);
     }
 
     return 0;
