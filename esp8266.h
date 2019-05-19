@@ -31,7 +31,6 @@ enum ESP8266_RESPONSE_STATUS {
     ESP8266_RESPONSE_FINISHED,
     ESP8266_RESPONSE_TIMEOUT,
     ESP8266_RESPONSE_BUFFER_FULL,
-    ESP8266_RESPONSE_STARTING,
     ESP8266_RESPONSE_ERROR
 };
 
@@ -64,7 +63,7 @@ bool ESP8266_ConnectionMode(uint8_t mode);
 
 uint8_t ESP8266_JoinAccessPoint(char *_SSID, char *_PASSWORD);
 
-uint8_t ESP8266_connected();
+uint8_t ESP8266_Connected();
 
 uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port);
 

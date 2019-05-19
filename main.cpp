@@ -44,8 +44,17 @@ void initServoPWMs() {
     }
 }
 
+/** Start WiFi module and try to connect to AP */
 void initWiFi() {
+    while (!ESP8266_Begin());
 
+    ESP8266_WIFIMode(WIFI_MODE_STATION);
+    ESP8266_ConnectionMode(SINGLE_CONN);
+    ESP8266_ApplicationMode(NORMAL);
+    if (ESP8266_Connected() == ESP8266_NOT_CONNECTED_TO_AP)
+        ESP8266_JoinAccessPoint(SSID, PASSWORD);
+
+    _delay_ms(2000);
 }
 
 int main() {
@@ -58,27 +67,19 @@ int main() {
 
     initWiFi();
 
-    char buffer[BUF_SIZE];
-    uint8_t connStatus;
-
-    while (!ESP8266_Begin());
-
-    ESP8266_WIFIMode(WIFI_MODE_STATION);
-    ESP8266_ConnectionMode(SINGLE_CONN);
-    ESP8266_ApplicationMode(NORMAL);
-    if (ESP8266_connected() == ESP8266_NOT_CONNECTED_TO_AP)
-        ESP8266_JoinAccessPoint(SSID, PASSWORD);
-
-    _delay_ms(2000);
-
+    // connect to driving server
     ESP8266_Start(0, DOMAIN, PORT);
-    printf(">>> TCP conn established\n");
+//    printf(">>> TCP conn established\n");
 
     _delay_ms(3000);
 
+    char buffer[BUF_SIZE];
+    uint8_t connStatus;
     int8_t speed, dir;
+
+    // continuously get parameters updates from server
     while (true) {
-        connStatus = ESP8266_connected();
+        connStatus = ESP8266_Connected();
         if (connStatus == ESP8266_NOT_CONNECTED_TO_AP)
             ESP8266_JoinAccessPoint(SSID, PASSWORD);
         if (connStatus == ESP8266_TRANSMISSION_DISCONNECTED)
@@ -90,8 +91,7 @@ int main() {
         ESP8266_Send(buffer);
         ESP8266_Read(buffer);
 
-        //printf("\nRECV: \n%s\n", buffer);
-
+        // extract parameters from server response
         char *beg = strchr(buffer, '*');
         char *sec = strchr(beg, ';');
 

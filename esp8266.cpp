@@ -13,7 +13,7 @@ int8_t responseStatus;
 volatile int16_t responseLen = 0, pointer = 0;
 char responseBuf[BUF_SIZE];
 
-void ESP8266_readResponse(char *expectedResponse) {
+void ESP8266_ReadResponse(char *expectedResponse) {
     uint8_t expectedLen = strlen(expectedResponse);
     uint32_t timeCount = 0, responseLength;
     char RECEIVED_CRLF_BUF[expectedLen];
@@ -70,7 +70,7 @@ void GetResponseBody(char *Response, uint16_t ResponseLength) {
 
 /** @return true for success, false otherwise */
 bool WaitForExpectedResponse(char *expectedResponse) {
-    ESP8266_readResponse(expectedResponse);
+    ESP8266_ReadResponse(expectedResponse);
 
     return responseStatus != ESP8266_RESPONSE_TIMEOUT;
 }
@@ -160,7 +160,7 @@ uint8_t ESP8266_JoinAccessPoint(char *_SSID, char *_PASSWORD) {
     }
 }
 
-uint8_t ESP8266_connected() {
+uint8_t ESP8266_Connected() {
     SendATandExpectResponse("AT+CIPSTATUS", "\r\nOK\r\n");
     if (strstr(responseBuf, "STATUS:2"))
         return ESP8266_CONNECTED_TO_AP;
@@ -220,6 +220,7 @@ uint8_t ESP8266_DataRead() {
     return 0;
 }
 
+/** Get received data from ESP8266 */
 uint16_t ESP8266_Read(char *buffer) {
     uint16_t len = 0;
     _delay_ms(100);
@@ -236,7 +237,7 @@ ISR (USART0_RX_vect) {
     responseBuf[responseLen++] = UDR0;
 
     // DBG print all ESP8266 responses to debug serial
-     printf("%c", UDR0);
+    // printf("%c", UDR0);
 
     if (responseLen == BUF_SIZE) {
         responseLen = 0;

@@ -51,8 +51,8 @@ void USART1_init() {
     /* porneste transmitatorul */
     UCSR1B = (1 << TXEN1) | (1 << RXEN1);
 
-    /* seteaza formatul frame-ului: 8 biti de date, 1 bit de stop */
-    UCSR1C |= (3 << UCSZ10);
+    /* seteaza formatul frame-ului: 8 biti de date, 1 bit de stop, paritate even */
+    UCSR1C |= (3 << UCSZ10) | (2 << UPM10);
 }
 
 void USART1_transmit(char data) {
