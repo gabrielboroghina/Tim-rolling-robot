@@ -9,59 +9,52 @@
 #include <stdlib.h>
 #include "usart.h"
 
-int8_t Response_Status;
+int8_t responseStatus;
 volatile int16_t responseLen = 0, pointer = 0;
-uint32_t TimeOut = 0;
-char RESPONSE_BUFFER[BUF_SIZE];
+uint32_t timeout = 0;
+char responseBuf[BUF_SIZE];
 
-void Read_Response(char *_Expected_Response) {
-    uint8_t EXPECTED_RESPONSE_LENGTH = strlen(_Expected_Response);
-    uint32_t TimeCount = 0, ResponseBufferLength;
+void Read_Response(char *expectedResponse) {
+    uint8_t EXPECTED_RESPONSE_LENGTH = strlen(expectedResponse);
+    uint32_t timeCount = 0, ResponseBufferLength;
     char RECEIVED_CRLF_BUF[EXPECTED_RESPONSE_LENGTH];
 
     while (true) {
-        if (TimeCount >= (DEFAULT_TIMEOUT + TimeOut)) {
-            TimeOut = 0;
-            Response_Status = ESP8266_RESPONSE_TIMEOUT;
+        if (timeCount >= DEFAULT_TIMEOUT + timeout) {
+            timeout = 0;
+            responseStatus = ESP8266_RESPONSE_TIMEOUT;
             return;
         }
 
-        if (Response_Status == ESP8266_RESPONSE_STARTING) {
-            Response_Status = ESP8266_RESPONSE_WAITING;
-        }
-        ResponseBufferLength = strlen(RESPONSE_BUFFER);
+        ResponseBufferLength = strlen(responseBuf);
         if (ResponseBufferLength) {
             _delay_ms(1);
-            TimeCount++;
-            if (ResponseBufferLength == strlen(RESPONSE_BUFFER)) {
+            timeCount++;
+            if (ResponseBufferLength == strlen(responseBuf)) {
                 for (uint16_t i = 0; i < ResponseBufferLength; i++) {
                     memmove(RECEIVED_CRLF_BUF, RECEIVED_CRLF_BUF + 1, EXPECTED_RESPONSE_LENGTH - 1);
-                    RECEIVED_CRLF_BUF[EXPECTED_RESPONSE_LENGTH - 1] = RESPONSE_BUFFER[i];
-                    if (!strncmp(RECEIVED_CRLF_BUF, _Expected_Response, EXPECTED_RESPONSE_LENGTH)) {
-                        TimeOut = 0;
-                        Response_Status = ESP8266_RESPONSE_FINISHED;
+                    RECEIVED_CRLF_BUF[EXPECTED_RESPONSE_LENGTH - 1] = responseBuf[i];
+                    if (!strncmp(RECEIVED_CRLF_BUF, expectedResponse, EXPECTED_RESPONSE_LENGTH)) {
+                        timeout = 0;
+                        responseStatus = ESP8266_RESPONSE_FINISHED;
                         return;
                     }
                 }
             }
         }
         _delay_ms(1);
-        TimeCount++;
+        timeCount++;
     }
 }
 
 void ESP8266_Clear() {
-    memset(RESPONSE_BUFFER, 0, BUF_SIZE);
+    memset(responseBuf, 0, BUF_SIZE);
     responseLen = 0;
     pointer = 0;
 }
 
-void Start_Read_Response(char *_ExpectedResponse) {
-    Response_Status = ESP8266_RESPONSE_STARTING;
-    do {
-        Read_Response(_ExpectedResponse);
-    } while (Response_Status == ESP8266_RESPONSE_WAITING);
-
+void Start_Read_Response(char *expectedResponse) {
+    Read_Response(expectedResponse);
 }
 
 void GetResponseBody(char *Response, uint16_t ResponseLength) {
@@ -83,10 +76,10 @@ void GetResponseBody(char *Response, uint16_t ResponseLength) {
 }
 
 /** @return true for success, false otherwise */
-bool WaitForExpectedResponse(char *ExpectedResponse) {
-    Start_Read_Response(ExpectedResponse); /* read response */
+bool WaitForExpectedResponse(char *expectedResponse) {
+    Start_Read_Response(expectedResponse); /* read response */
 
-    if (Response_Status != ESP8266_RESPONSE_TIMEOUT)
+    if (responseStatus != ESP8266_RESPONSE_TIMEOUT)
         return true;
     return false;
 }
@@ -97,18 +90,16 @@ void sendAT(char *ATCmd) {
     /* send AT command to ESP8266 */
     USART0_print(ATCmd);
     USART0_print("\r\n");
-
-    printf("***\r\n");
 }
 
-bool SendATandExpectResponse(char *ATCommand, char *ExpectedResponse) {
+bool SendATandExpectResponse(char *ATCommand, char *expectedResponse) {
     ESP8266_Clear();
 
     /* send AT command to ESP8266 */
     USART0_print(ATCommand);
     USART0_print("\r\n");
 
-    return WaitForExpectedResponse(ExpectedResponse);
+    return WaitForExpectedResponse(expectedResponse);
 }
 
 bool ESP8266_ApplicationMode(uint8_t Mode) {
@@ -128,10 +119,10 @@ void ESP8266_deepSleep() {
     sendAT(_atCommand);
 }
 
-bool ESP8266_ConnectionMode(uint8_t Mode) {
+bool ESP8266_ConnectionMode(uint8_t mode) {
     char _atCommand[20];
     memset(_atCommand, 0, 20);
-    sprintf(_atCommand, "AT+CIPMUX=%d", Mode);
+    sprintf(_atCommand, "AT+CIPMUX=%d", mode);
     _atCommand[19] = 0;
     return SendATandExpectResponse(_atCommand, "\r\nOK\r\n");
 }
@@ -149,10 +140,10 @@ bool ESP8266_Close() {
     return SendATandExpectResponse("AT+CIPCLOSE=1", "\r\nOK\r\n");
 }
 
-bool ESP8266_WIFIMode(uint8_t _mode) {
+bool ESP8266_WIFIMode(uint8_t mode) {
     char _atCommand[20];
     memset(_atCommand, 0, 20);
-    sprintf(_atCommand, "AT+CWMODE=%d", _mode);
+    sprintf(_atCommand, "AT+CWMODE=%d", mode);
     _atCommand[19] = 0;
     return SendATandExpectResponse(_atCommand, "\r\nOK\r\n");
 }
@@ -166,14 +157,14 @@ uint8_t ESP8266_JoinAccessPoint(char *_SSID, char *_PASSWORD) {
         return ESP8266_WIFI_CONNECTED;
     } else {
         printf("WiFi connecting error\r\n");
-        printf("%s\n", RESPONSE_BUFFER);
-        if (strstr(RESPONSE_BUFFER, "+CWJAP:1"))
+        printf("%s\n", responseBuf);
+        if (strstr(responseBuf, "+CWJAP:1"))
             return ESP8266_CONNECTION_TIMEOUT;
-        else if (strstr(RESPONSE_BUFFER, "+CWJAP:2"))
+        else if (strstr(responseBuf, "+CWJAP:2"))
             return ESP8266_WRONG_PASSWORD;
-        else if (strstr(RESPONSE_BUFFER, "+CWJAP:3"))
+        else if (strstr(responseBuf, "+CWJAP:3"))
             return ESP8266_NOT_FOUND_TARGET_AP;
-        else if (strstr(RESPONSE_BUFFER, "+CWJAP:4"))
+        else if (strstr(responseBuf, "+CWJAP:4"))
             return ESP8266_CONNECTION_FAILED;
         else
             return ESP8266_JOIN_UNKNOWN_ERROR;
@@ -182,13 +173,13 @@ uint8_t ESP8266_JoinAccessPoint(char *_SSID, char *_PASSWORD) {
 
 uint8_t ESP8266_connected() {
     SendATandExpectResponse("AT+CIPSTATUS", "\r\nOK\r\n");
-    if (strstr(RESPONSE_BUFFER, "STATUS:2"))
+    if (strstr(responseBuf, "STATUS:2"))
         return ESP8266_CONNECTED_TO_AP;
-    else if (strstr(RESPONSE_BUFFER, "STATUS:3"))
+    else if (strstr(responseBuf, "STATUS:3"))
         return ESP8266_CREATED_TRANSMISSION;
-    else if (strstr(RESPONSE_BUFFER, "STATUS:4"))
+    else if (strstr(responseBuf, "STATUS:4"))
         return ESP8266_TRANSMISSION_DISCONNECTED;
-    else if (strstr(RESPONSE_BUFFER, "STATUS:5"))
+    else if (strstr(responseBuf, "STATUS:5"))
         return ESP8266_NOT_CONNECTED_TO_AP;
     else
         return ESP8266_CONNECT_UNKNOWN_ERROR;
@@ -198,9 +189,8 @@ uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port) {
     bool _startResponse;
     char _atCommand[100];
     memset(_atCommand, 0, 100);
-    _atCommand[99] = 0;
 
-    _delay_ms(4000);
+    _delay_ms(3000);
     if (SendATandExpectResponse("AT+CIPMUX?", "CIPMUX:0"))
         sprintf(_atCommand, "AT+CIPSTART=\"TCP\",\"%s\",%s", Domain, Port);
     else
@@ -210,7 +200,7 @@ uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port) {
 
     _startResponse = SendATandExpectResponse(_atCommand, "CONNECT\r\n");
     if (!_startResponse) {
-        if (Response_Status == ESP8266_RESPONSE_TIMEOUT)
+        if (responseStatus == ESP8266_RESPONSE_TIMEOUT)
             return ESP8266_RESPONSE_TIMEOUT;
         return ESP8266_RESPONSE_ERROR;
     }
@@ -221,11 +211,10 @@ uint8_t ESP8266_Send(char *Data) {
     char _atCommand[20];
     memset(_atCommand, 0, 20);
     sprintf(_atCommand, "AT+CIPSEND=%d", (strlen(Data) + 2));
-    _atCommand[19] = 0;
 
     SendATandExpectResponse(_atCommand, "\r\nOK\r\n>");
     if (!SendATandExpectResponse(Data, "\r\nSEND OK\r\n")) {
-        if (Response_Status == ESP8266_RESPONSE_TIMEOUT)
+        if (responseStatus == ESP8266_RESPONSE_TIMEOUT)
             return ESP8266_RESPONSE_TIMEOUT;
         return ESP8266_RESPONSE_ERROR;
     }
@@ -238,7 +227,7 @@ int16_t ESP8266_DataAvailable() {
 
 uint8_t ESP8266_DataRead() {
     if (pointer < responseLen)
-        return RESPONSE_BUFFER[pointer++];
+        return responseBuf[pointer++];
     else {
         ESP8266_Clear();
         return 0;
@@ -258,11 +247,10 @@ uint16_t Read_Data(char *buffer) {
 ISR (USART0_RX_vect) {
     uint8_t oldsrg = SREG;
     cli();
-    RESPONSE_BUFFER[responseLen] = UDR0;
+    responseBuf[responseLen++] = UDR0;
 
     //printf("%c", UDR0); // print all ESP8266 responses to debug serial
 
-    responseLen++;
     if (responseLen == BUF_SIZE) {
         responseLen = 0;
         pointer = 0;

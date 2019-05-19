@@ -4,7 +4,7 @@
 #include <avr/io.h>
 
 #define BUF_SIZE        200
-#define DEFAULT_TIMEOUT 1300
+#define DEFAULT_TIMEOUT 1000
 
 /* Connection Mode */
 #define SINGLE_CONN    0
@@ -56,11 +56,11 @@ void ESP8266_deepSleep();
 
 bool ESP8266_Begin();
 
-bool ESP8266_WIFIMode(uint8_t _mode);
+bool ESP8266_WIFIMode(uint8_t mode);
 
-bool ESP8266_ApplicationMode(uint8_t Mode);
+bool ESP8266_ApplicationMode(uint8_t mode);
 
-bool ESP8266_ConnectionMode(uint8_t Mode);
+bool ESP8266_ConnectionMode(uint8_t mode);
 
 uint8_t ESP8266_JoinAccessPoint(char *_SSID, char *_PASSWORD);
 
