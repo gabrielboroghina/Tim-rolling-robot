@@ -75,7 +75,7 @@ bool WaitForExpectedResponse(const char *expectedResponse) {
     return responseStatus != ESP8266_RESPONSE_TIMEOUT;
 }
 
-void sendAT(char *ATCmd) {
+void sendAT(const char *ATCmd) {
     ESP8266_Clear();
 
     /* send AT command to ESP8266 */
@@ -139,7 +139,7 @@ bool ESP8266_WIFIMode(uint8_t mode) {
     return SendATandExpectResponse(ATCmd, "\r\nOK\r\n");
 }
 
-uint8_t ESP8266_JoinAccessPoint(char *_SSID, char *_PASSWORD) {
+uint8_t ESP8266_JoinAccessPoint(const char *_SSID, const char *_PASSWORD) {
     char ATCmd[60];
     memset(ATCmd, 0, 60);
     sprintf(ATCmd, "AT+CWJAP=\"%s\",\"%s\"", _SSID, _PASSWORD);
@@ -174,7 +174,7 @@ uint8_t ESP8266_Connected() {
         return ESP8266_CONNECT_UNKNOWN_ERROR;
 }
 
-uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port) {
+uint8_t ESP8266_Start(uint8_t _ConnectionNumber, const char *Domain, const char *Port) {
     bool _startResponse;
     char ATCmd[100];
     memset(ATCmd, 0, 100);
@@ -196,7 +196,7 @@ uint8_t ESP8266_Start(uint8_t _ConnectionNumber, char *Domain, char *Port) {
     return ESP8266_RESPONSE_FINISHED;
 }
 
-uint8_t ESP8266_Send(char *Data) {
+uint8_t ESP8266_Send(const char *Data) {
     char ATCmd[20];
     memset(ATCmd, 0, 20);
     sprintf(ATCmd, "AT+CIPSEND=%d", (strlen(Data) + 2));
