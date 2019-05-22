@@ -6,7 +6,7 @@
 #define onD(b) (PORTD) |= (1 << (b))
 
 #define offB(b) (PORTB) &= ~(1 << (b))
-#define offC(x) (PORTB) &= ~(1 << (x))
+#define offC(x) (PORTC) &= ~(1 << (x))
 #define offD(b) (PORTD) &= ~(1 << (b))
 
 // -------------------------------------------------------

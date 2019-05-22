@@ -207,7 +207,7 @@ uint8_t ESP8266_Send(const char *Data) {
 
     sendAT(Data);
     while (!strstr(responseBuf, "IPD"))
-        _delay_ms(20);
+        _delay_ms(10);
 
     return ESP8266_RESPONSE_FINISHED;
 }
@@ -223,7 +223,7 @@ uint8_t ESP8266_DataRead() {
 /** Get received data from ESP8266 */
 uint16_t ESP8266_Read(char *buffer) {
     uint16_t len = 0;
-    _delay_ms(100);
+    _delay_ms(30);
     while (pointer < responseLen)
         buffer[len++] = ESP8266_DataRead();
     buffer[len] = '\0';
