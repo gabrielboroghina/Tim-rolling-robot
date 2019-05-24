@@ -10,6 +10,9 @@
 #include "usart.h"
 #include "esp8266.h"
 
+#define SERVO_CNT_MIN 8
+#define SERVO_CNT_MAX 30
+
 const char *UPDATE_REQUEST =
         "GET /get HTTP/1.1\r\n"
         "Host: tim-tim.7e14.starter-us-west-2.openshiftapps.com\r\n"
@@ -64,23 +67,30 @@ void initEnginePWM() {
     setOutD(PD7);
 }
 
+bool extended = false;
+
+/** Button pressed ISR */
 ISR(INT2_vect) {
-    if (OCR0B == 8) {
-        OCR0B = 15;
-    } else {
-        OCR0B = 8;
+    if (OCR0B == SERVO_CNT_MIN && !extended) {
+        OCR0B = 17;
+        _delay_ms(2000);
+        extended = true;
+    } else if (extended) {
+        OCR0B = SERVO_CNT_MIN;
+        _delay_ms(2000);
+        extended = false;
     }
-    PORTD ^= (1 << PD7);
-    _delay_ms(1000);
+
+
 }
 
 void initServoPWMs() {
     // LEFT servo
-    setOutB(PB4);  /* Make OC0B pin output */
-    TCNT0 = 0;     /* Set timer0 count zero */
-    OCR0B = 8;     /* init */
+    setOutB(PB4);  // Make OC0B pin output
+    TCNT0 = 0;     // Set timer0 count zero
+    OCR0B = SERVO_CNT_MIN;     // initial state
 
-    /* Set Fast PWM, Clear OC0B on compare match, clk/1024 */
+    // set fast PWM, clear OC0B on compare match, clk/1024
     TCCR0A = (1 << WGM01) | (1 << WGM00) | (1 << COM0B1);
     TCCR0B = (1 << CS02) | (1 << CS00);
 
