@@ -26,9 +26,31 @@ void initDebug_USART1() {
     stdout = serial;
 }
 
+void drive(int speed, int dir) {
+    if (speed > 0) {
+        // go forward
+        onB(PB5);
+        offB(PB6);
+
+        OCR1A = speed * 16;
+    } else if (speed < 0) {
+        // go backward
+        offB(PB5);
+        onB(PB6);
+
+        OCR1A = -speed * 16;
+    } else {
+        // brake
+        offB(PB5);
+        offB(PB6);
+
+        OCR1A = 0;
+    }
+}
+
 void initEnginePWM() {
-    setOutC(PC2);
-    setOutC(PC3);
+    setOutB(PB5);
+    setOutB(PB6);
 
     setOutD(PD5);
     TCCR1A = (2 << COM1A0) | (1 << WGM11); // phase correct PWM
@@ -37,25 +59,33 @@ void initEnginePWM() {
     TCNT1 = 0;    // Set timer1 count zero
     ICR1 = 1600;  // Set TOP count for timer1 in ICR1 register
     OCR1A = 0;
+
+    setBtnB(PB2);
+    setOutD(PD7);
+}
+
+ISR(INT2_vect) {
+    if (OCR0B == 8) {
+        OCR0B = 15;
+    } else {
+        OCR0B = 8;
+    }
+    PORTD ^= (1 << PD7);
+    _delay_ms(1000);
 }
 
 void initServoPWMs() {
-    setOutD(PD5);  /* Make OC1A pin output */
-    TCNT1 = 0;     /* Set timer1 count zero */
-    ICR1 = 5000;   /* Set TOP count for timer1 in ICR1 register */
-    OCR1A = 5000;
+    // LEFT servo
+    setOutB(PB4);  /* Make OC0B pin output */
+    TCNT0 = 0;     /* Set timer0 count zero */
+    OCR0B = 8;     /* init */
 
-    /* Set Fast PWM, TOP in ICR1, Clear OC1A on compare match, clk/64 */
-    TCCR1A = (1 << WGM11) | (1 << COM1A1);
-    TCCR1B = (1 << WGM12) | (1 << WGM13) | (1 << CS10) | (1 << CS11);
-    while (1) {
-        OCR1A = 70 * 2;    /* Set servo shaft at -90° position */
-        _delay_ms(1500);
-        OCR1A = 175 * 2;    /* Set servo shaft at 0° position */
-        _delay_ms(1500);
-        OCR1A = 300 * 2;    /* Set servo at +90° position */
-        _delay_ms(3000);
-    }
+    /* Set Fast PWM, Clear OC0B on compare match, clk/1024 */
+    TCCR0A = (1 << WGM01) | (1 << WGM00) | (1 << COM0B1);
+    TCCR0B = (1 << CS02) | (1 << CS00);
+
+    EICRA = (1 << ISC21);
+    EIMSK = (1 << INT2);
 }
 
 /** Start WiFi module and try to connect to AP */
@@ -71,28 +101,6 @@ void initWiFi() {
     _delay_ms(2000);
 }
 
-void drive(int speed, int dir) {
-    if (speed > 0) {
-        // go forward
-        onC(PC2);
-        offC(PC3);
-
-        OCR1A = speed * 16;
-    } else if (speed < 0) {
-        // go backward
-        offC(PC2);
-        onC(PC3);
-
-        OCR1A = -speed * 16;
-    } else {
-        // brake
-        offC(PC2);
-        offC(PC3);
-
-        OCR1A = 0;
-    }
-}
-
 int main() {
     USART0_init();
     sei(); // enable global interrupts
@@ -100,13 +108,12 @@ int main() {
     initDebug_USART1();
 
     initEnginePWM();
-    //initServoPWMs();
+    initServoPWMs();
 
     initWiFi();
 
     // connect to driving server
     ESP8266_Start(0, DOMAIN, PORT);
-    // printf(">>> TCP conn established\n");
     _delay_ms(3000);
 
     char buffer[BUF_SIZE];
@@ -132,7 +139,6 @@ int main() {
         *sec = '\0';
         speed = atoi(beg + 3);
         dir = atoi(sec + 1);
-        // printf("%i %i\n", speed, dir);
 
         drive(speed, dir);
     }

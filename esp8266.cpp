@@ -50,24 +50,6 @@ void ESP8266_Clear() {
     pointer = 0;
 }
 
-void GetResponseBody(char *Response, uint16_t ResponseLength) {
-
-    uint16_t i = 12;
-    char buffer[5];
-    while (Response[i] != '\r')
-        ++i;
-
-    strncpy(buffer, Response + 12, (i - 12));
-    ResponseLength = atoi(buffer);
-
-    i += 2;
-    uint16_t tmp = strlen(Response) - i;
-    memcpy(Response, Response + i, tmp);
-
-    if (!strncmp(Response + tmp - 6, "\r\nOK\r\n", 6))
-        memset(Response + tmp - 6, 0, i + 6);
-}
-
 /** @return true for success, false otherwise */
 bool WaitForExpectedResponse(const char *expectedResponse) {
     ESP8266_ReadResponse(expectedResponse);
@@ -184,8 +166,6 @@ uint8_t ESP8266_Start(uint8_t _ConnectionNumber, const char *Domain, const char 
         sprintf(ATCmd, "AT+CIPSTART=\"TCP\",\"%s\",%s", Domain, Port);
     else
         sprintf(ATCmd, "AT+CIPSTART=\"TCP\",\"%s\",%s", Domain, Port);
-//        sprintf(ATCmd, "AT+CIPSTART=\"%d\",\"TCP\",\"%s\",%s", _ConnectionNumber, Domain,
-//                Port);
 
     _startResponse = SendATandExpectResponse(ATCmd, "CONNECT\r\n");
     if (!_startResponse) {
@@ -235,9 +215,6 @@ ISR (USART0_RX_vect) {
     uint8_t oldsrg = SREG;
     cli();
     responseBuf[responseLen++] = UDR0;
-
-    // DBG print all ESP8266 responses to debug serial
-    // printf("%c", UDR0);
 
     if (responseLen == BUF_SIZE) {
         responseLen = 0;
